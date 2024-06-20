@@ -189,7 +189,7 @@ jobs:
           variables: |
             {
               "owner": ${{ github.repository_owner }},
-              "name": ${{ github.repository }}
+              "name": ${{ github.event.repository.name }}
             }
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
@@ -253,6 +253,7 @@ jobs:
           EOF
         env:
           parent_issue_url: ${{ fromJSON(steps.create_parent_issue.outputs.data).createIssue.issue.url }}
+          my_org: ${{ github.repository_owner }}
 
       - name: Create child issues
         id: create_child_issues
