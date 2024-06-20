@@ -4,300 +4,45 @@ on:
   schedule:
     - cron: '0 0 1 * *'
   workflow_dispatch:
+    inputs:
+      - name: get_repos_inactive_for_months
+        description: "指定された月数以上更新されていないリポジトリのみを対象とする（0 に設定するとすべてのリポジトリが対象となる）"
+        required: false
+        default: 3
 
 env:
   my_team: sre  # team who has an ownership of parent issue
-  threshold_inactive: 0  # if repo `updatedAt` is greater than this parameter, it is assumed as "inactive"
 
 jobs:
-  get_archive_candidates:
+  construct_issue_title_and_body:
     runs-on: ubuntu-latest
     outputs:
-      has_old_repos: ${{ steps.get_archive_candidates.outputs.has_old_repos }}
-      old_repos: ${{ steps.get_archive_candidates.outputs.old_repos }}
-      current_year: ${{ env.current_year }}
-      current_quarter: ${{ env.current_quarter }}
+      parent_issue_title: ${{ steps.construct_issue_data.outputs.parent_issue_title }}
+      parent_issue_body: ${{ steps.construct_issue_data.outputs.parent_issue_body }}
+      child_issue_title: ${{ steps.construct_issue_data.outputs.child_issue_title }}
+      child_issue_body: ${{ steps.construct_issue_data.outputs.child_issue_body }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Generate GitHub App Token
-        id: generate_token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID_TEAM_READER }}
-          private-key: ${{ secrets.PRIVATE_KEY_TEAM_READER }}
-
       - name: Set date variable
         id: date
         run: |
-          echo "month_ago=$(date -d '-${{ env.threshold_inactive }} month' --utc +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          echo "month_ago=$(date -d '-${{ inputs.get_repos_inactive_for_months }} month' --utc +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
           echo "current_year=$(date +'%Y')" >> $GITHUB_ENV
           echo "current_quarter=$((($(date +%m)-1)/3+1))Q" >> $GITHUB_ENV
-
-      - name: Query all repositories under organization
-        id: query_repo
-        uses: octokit/graphql-action@v2.3.2
-        with:
-          query: |
-            query ($org: String!) {
-              organization(login: $org) {
-                repositories(first: 100, orderBy: {field: UPDATED_AT, direction: ASC}) {
-                  nodes {
-                    name
-                    updatedAt
-                  }
-                }
-              }
-            }
-          variables: |
-            {
-              "org": "${{ github.repository_owner }}"
-            }
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-
-      - name: Query teams
-        id: query_teams
-        uses: octokit/graphql-action@v2.3.2
-        with:
-          query: |
-            query ($org: String!) {
-              organization(login: $org) {
-                teams(first: 100) {
-                  edges {
-                    node {
-                      slug
-                      name
-                      repositories(first: 100) {
-                        edges {
-                          node {
-                            name
-                          }
-                          permission
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          variables: |
-            {
-              "org": ${{ github.repository_owner }}
-            }
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-
-      - name: Get archive candidate repos
-        id: get_archive_candidates
+    
+      - name: Construct issue title and body
+        id: construct_issue_data
         run: |
-          echo "Extracting old repositories..."
-          python3 - <<EOF
-          import os
-          from datetime import datetime, timedelta
-          import json
-
-          # Repositories response from query_repo step
-          repos_response = ${{
-            steps.query_repo.outputs.data
-          }}
-          repos_nodes = repos_response['organization']['repositories']['nodes']
-
-          # Teams response from query_teams step
-          teams_response = ${{
-            steps.query_teams.outputs.data
-          }}
-          teams_edges = teams_response['organization']['teams']['edges']
-
-          month_ago = datetime.strptime(os.getenv('month_ago'), '%Y-%m-%dT%H:%M:%SZ')
-
-          # Build a map of teams and their repository permissions
-          team_repo_permissions = {}
-          for team in teams_edges:
-            team_slug = team['node']['slug']
-            for repo_edge in team['node']['repositories']['edges']:
-              repo_name = repo_edge['node']['name']
-              permission = repo_edge['permission']
-              if permission == 'ADMIN':
-                if repo_name not in team_repo_permissions:
-                  team_repo_permissions[repo_name] = []
-                team_repo_permissions[repo_name].append(team_slug)
-
-          # Filter old repositories and find admin teams
-          old_repos = [
-            {
-              'name': repo['name'],
-              'admin_teams': team_repo_permissions.get(repo['name'], [])
-            }
-            for repo in repos_nodes if datetime.strptime(repo['updatedAt'], '%Y-%m-%dT%H:%M:%SZ') < month_ago
-          ]
-
-          if not old_repos:
-              print(f"No repositories found that were updated more than {os.getenv('threshold_inactive')} months ago.")
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-                  fh.write(f"has_old_repos=false\n")
-              exit(0)
-
-          old_repos_str = json.dumps(old_repos)
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-              fh.write(f"has_old_repos=true\n")
-              fh.write(f"old_repos={old_repos_str}\n")
-          EOF
-
-  create_issues:
-    runs-on: ubuntu-latest
-    needs: get_archive_candidates
-    if: needs.get_archive_candidates.outputs.has_old_repos == 'true'
-    env:
-      old_repos: ${{ needs.get_archive_candidates.outputs.old_repos }}
-      current_year: ${{ needs.get_archive_candidates.outputs.current_year }}
-      current_quarter: ${{ needs.get_archive_candidates.outputs.current_quarter }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Generate GitHub App Token
-        id: generate_token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID_ISSUE_CREATOR }}
-          private-key: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
-
-      - name: Get repository ID
-        id: get_repo_id
-        uses: octokit/graphql-action@v2.3.2
-        with:
-          query: |
-            query($owner: String!, $name: String!) {
-              repository(owner: $owner, name: $name) {
-                id
-              }
-            }
-          variables: |
-            {
-              "owner": ${{ github.repository_owner }},
-              "name": ${{ github.event.repository.name }}
-            }
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-
-
-      - name: Create parent issue
-        id: create_parent_issue
-        uses: octokit/graphql-action@v2.3.2
-        with:
-          query: |
-            mutation($repoId: ID!, $title: String!, $body: String!) {
-              createIssue(input: {repositoryId: $repoId, title: $title, body: $body}) {
-                issue {
-                  url
-                  id
-                }
-              }
-            }
-          variables: |
-            {
-              "repoId": "${{ fromJSON(steps.get_repo_id.outputs.data).repository.id }}",
-              "title": "[${{ env.current_year }} ${{ env.current_quarter }}] リポジトリ棚卸し",
-              "body": ""
-            }
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-
-      - name: Create child issue data
-        id: create_child_issue_data
-        run: |
-          echo "Creating child issue data..."
-          python3 - <<EOF
-          import os
-          import json
-
-          old_repos_str = os.getenv('old_repos')
-          old_repos = json.loads(old_repos_str)
-
-          threshold_inactive = os.getenv('threshold_inactive')
-          my_org = os.getenv('my_org')
-          my_team = os.getenv('my_team')
-          current_year = os.getenv('current_year')
-          current_quarter = os.getenv('current_quarter')
-          year_quarter = f"[{current_year} {current_quarter} repo 棚卸し]"
-          parent_issue_url = os.getenv('parent_issue_url')
-
-          child_issue_data_list = []
-
-          for repo in old_repos:
-              repo_name = repo['name']
-              admin_teams = [f"{my_org}/{t}" for t in repo['admin_teams']]
-              admin_team_mentions = " ".join([f"@{t}" for t in admin_teams])
-              issue_title = f"{year_quarter} 本リポジトリのアーカイブを検討する"
-              issue_body = f"本リポジトリは直近 {threshold_inactive} か月間で更新がないようです。利用状況を確認し、アーカイブ可能な場合には @{my_org}/{my_team} にご連絡ください。{admin_team_mentions}\n- 依頼背景: {parent_issue_url} において Organization リポジトリの棚卸しをしており、利用されなくなったリポジトリのアーカイブを検討しています。"
-              issue_data = {'repo': f"{my_org}/{repo_name}", 'admin_team_mentions': f"{admin_team_mentions}", 'issue_title': issue_title, 'issue_body': issue_body}
-              child_issue_data_list.append(issue_data)
-
-          child_issue_data_str = json.dumps(child_issue_data_list)
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-              fh.write(f"child_issue_data={child_issue_data_str}\n")
-          EOF
-        env:
-          parent_issue_url: ${{ fromJSON(steps.create_parent_issue.outputs.data).createIssue.issue.url }}
-          my_org: ${{ github.repository_owner }}
-
-      - name: Create child issues
-        id: create_child_issues
-        run: |
-          echo "Creating child issues..."
-          echo "child_issue_urls<<EOF" >> $GITHUB_ENV
-
-          issue_data='${{ steps.create_child_issue_data.outputs.child_issue_data }}'
-          length=$(echo $issue_data | jq length)
-
-          for i in $(seq 0 $(($length - 1))); do
-              repo=$(echo $issue_data | jq -r .[$i].repo)
-              issue_title=$(echo $issue_data | jq -r .[$i].issue_title)
-              issue_body=$(echo $issue_data | jq -r .[$i].issue_body)
-
-              issue_url=$(gh issue create --repo "$repo" --title "$issue_title" --body "$issue_body" 2>&1)
-              if [ $? -ne 0 ]; then
-                  echo "Failed to create issue for $repo. Error: $issue_url"
-                  exit 1
-              fi
-              echo $issue_url
-
-              echo "- [ ] $issue_url\n" >> $GITHUB_ENV
-          done
-
-          echo EOF >> $GITHUB_ENV
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-
-      - name: Update parent issue description
-        uses: octokit/graphql-action@v2.3.2
-        with:
-          query: |
-            mutation ($id: ID!, $body: String!) {
-              updateIssue(input: {id: $id, body: $body}) {
-                issue {
-                  body
-                }
-              }
-            }
-          variables: |
-            {
-              "id": "${{ fromJSON(steps.create_parent_issue.outputs.data).createIssue.issue.id }}",
-              "body": "下記は直近 ${{ env.threshold_inactive }} か月間で更新のないリポジトリのリストです。アーカイブを検討してください。\n${{ env.child_issue_urls }}"
-            }
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          echo "parent_issue_title=[${{ env.current_year }} ${{ env.current_quarter }}] リポジトリ棚卸し" >> "$GITHUB_OUTPUT"
+          echo "parent_issue_body=下記は直近 ${{ env.month_ago }} か月間で更新のないリポジトリのリストです。アーカイブを検討してください。" >> "$GITHUB_OUTPUT"
+          echo "child_issue_title=[${{ env.current_year }} ${{ env.current_quarter }}] 本リポジトリのアーカイブを検討する"
+          echo "child_issue_body=本リポジトリは直近 ${{ inputs.get_repos_inactive_for_months }} か月間で更新がないようです。利用状況を確認し、アーカイブ可能な場合には @${{ github.event.repository.name }}/${{ env.my_team }} にご連絡ください。"
+  create_issues_for_organization_repository:
+    needs: construct_issue_title_and_body
+    uses: ./.github/workflows/_create-issue-at-org-repositories.yml
+    with:
+      - parent_issue_title: ${{ needs.construct_issue_title_and_body.outputs.parent_issue_title}}
+      - parent_issue_body: ${{ needs.construct_issue_title_and_body.outputs.parent_issue_body}}
+      - child_issue_title: ${{ needs.construct_issue_title_and_body.outputs.child_issue_title}}
+      - child_issue_body: ${{ needs.construct_issue_title_and_body.outputs.child_issue_body}}
+      - get_repos_inactive_for_months: ${{ inputs.get_repos_inactive_for_months }}
