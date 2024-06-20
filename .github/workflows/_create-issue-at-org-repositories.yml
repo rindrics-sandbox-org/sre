@@ -16,6 +16,10 @@ on:
         required: false
         type: string
         default: "0"
+    secrets:
+      PRIVATE_KEY_ISSUE_CREATOR:
+        description: "a private key of GitHub App with permissions to complete this workflow"
+        required: true
 
 jobs:
   get_archive_candidates:
@@ -39,8 +43,8 @@ jobs:
         id: generate_token
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ vars.APP_ID_TEAM_READER }}
-          private-key: ${{ secrets.PRIVATE_KEY_TEAM_READER }}
+          app-id: ${{ vars.APP_ID_ISSUE_CREATOR }}
+          private-key: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
 
       - name: Set date variable
         id: date

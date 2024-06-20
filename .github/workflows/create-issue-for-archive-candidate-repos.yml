@@ -28,6 +28,7 @@ jobs:
       parent_issue_body: ${{ steps.construct_issue_data.outputs.parent_issue_body }}
       child_issue_title: ${{ steps.construct_issue_data.outputs.child_issue_title }}
       child_issue_body: ${{ steps.construct_issue_data.outputs.child_issue_body }}
+      access_token: ${{ steps.generate_token.outputs.token }}
 
     steps:
       - name: Set date variable
@@ -54,3 +55,5 @@ jobs:
       child_issue_title: ${{ needs.construct_issue_title_and_body.outputs.child_issue_title }}
       child_issue_body: ${{ needs.construct_issue_title_and_body.outputs.child_issue_body }}
       get_repos_inactive_for_months: ${{ inputs.get_repos_inactive_for_months }}
+    secrets:
+      PRIVATE_KEY_ISSUE_CREATOR: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
