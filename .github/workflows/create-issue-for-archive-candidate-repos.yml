@@ -7,7 +7,7 @@ on:
 
 env:
   my_team: sre  # team who has an ownership of parent issue
-  threshold_inactive: 3  # if repo `updatedAt` is greater than this parameter, it is assumed as "inactive"
+  threshold_inactive: 0  # if repo `updatedAt` is greater than this parameter, it is assumed as "inactive"
 
 jobs:
   get_archive_candidates:
