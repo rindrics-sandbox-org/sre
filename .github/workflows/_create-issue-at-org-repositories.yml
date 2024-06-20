@@ -224,7 +224,7 @@ jobs:
             {
               "repoId": ${{ fromJSON(steps.get_repo_id.outputs.data).repository.id }},
               "title": ${{ inputs.parent_issue_title }},
-              "body": ${{ inputs.parent_issue_title }}
+              "body": ${{ inputs.parent_issue_body }}
             }
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}

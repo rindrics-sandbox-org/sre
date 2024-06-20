@@ -41,9 +41,9 @@ jobs:
       - name: Construct issue title and body
         id: construct_issue_data
         run: |
-          echo "parent_issue_title=[${{ env.current_year }} ${{ env.current_quarter }}] リポジトリ棚卸し" >> "$GITHUB_OUTPUT"
-          echo "parent_issue_body=下記は直近 ${{ env.month_ago }} か月間で更新のないリポジトリのリストです。アーカイブを検討してください。" >> "$GITHUB_OUTPUT"
-          echo "child_issue_title=[${{ env.current_year }} ${{ env.current_quarter }}] 本リポジトリのアーカイブを検討する" >> "$GITHUB_OUTPUT"
+          echo "parent_issue_title=\"[${{ env.current_year }} ${{ env.current_quarter }}] リポジトリ棚卸し\"" >> "$GITHUB_OUTPUT"
+          echo "parent_issue_body=下記は直近 ${{ inputs.get_repos_inactive_for_months }} か月間で更新のないリポジトリのリストです。アーカイブを検討してください。" >> "$GITHUB_OUTPUT"
+          echo "child_issue_title=\"[${{ env.current_year }} ${{ env.current_quarter }}] 本リポジトリのアーカイブを検討する\"" >> "$GITHUB_OUTPUT"
           echo "child_issue_body=本リポジトリは直近 ${{ inputs.get_repos_inactive_for_months }} か月間で更新がないようです。利用状況を確認し、アーカイブ可能な場合には @${{ github.event.repository.name }}/${{ env.my_team }} にご連絡ください。" >> "$GITHUB_OUTPUT"
 
   create_issues_for_organization_repository:
