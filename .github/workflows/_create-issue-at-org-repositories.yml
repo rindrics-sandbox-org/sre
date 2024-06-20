@@ -222,9 +222,9 @@ jobs:
             }
           variables: |
             {
-              "repoId": ${{ fromJSON(steps.get_repo_id.outputs.data).repository.id }},
-              "title": ${{ inputs.parent_issue_title }},
-              "body": ${{ inputs.parent_issue_body }}
+              "repoId": "${{ fromJSON(steps.get_repo_id.outputs.data).repository.id }}",
+              "title": "${{ inputs.parent_issue_title }}",
+              "body": "${{ inputs.parent_issue_body }}"
             }
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
@@ -262,9 +262,9 @@ jobs:
           EOF
         env:
           my_org: ${{ github.repository_owner }}
-          parent_issue_url: ${{ fromJSON(steps.create_parent_issue.outputs.data).createIssue.issue.url }}
-          child_issue_title: ${{ inputs.child_issue_title }}
-          child_issue_body: ${{ inputs.child_issue_body }}
+          parent_issue_url: "${{ fromJSON(steps.create_parent_issue.outputs.data).createIssue.issue.url }}"
+          child_issue_title: "${{ inputs.child_issue_title }}"
+          child_issue_body: "${{ inputs.child_issue_body }}"
 
       - name: Create child issues
         id: create_child_issues
