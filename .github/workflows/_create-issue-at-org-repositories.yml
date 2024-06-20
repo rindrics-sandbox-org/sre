@@ -14,7 +14,7 @@ on:
       get_repos_inactive_for_months:
         description: "指定された月数以上更新されていないリポジトリのみを対象とする（0 に設定するとすべてのリポジトリが対象となる）"
         required: false
-        type: int
+        type: string
         default: 0
 
 jobs:
