@@ -281,8 +281,7 @@ jobs:
               issue_body=$(echo $issue_data | jq -r .[$i].issue_body)
               admin_team_mentions=$(echo $issue_data | jq -r .[$i].admin_team_mentions)
 
-              issue_url=$(gh issue create --repo "$repo" --title "$issue_title" --body "$issue_body$admin_team_mentions \
-              - 依頼背景: $parent_issue_url" 2>&1)
+              issue_url=$(gh issue create --repo "$repo" --title "$issue_title" --body "$issue_body$admin_team_mentions （依頼背景: $parent_issue_url）" 2>&1)
               if [ $? -ne 0 ]; then
                   echo "Failed to create issue for $repo. Error: $issue_url"
                   exit 1
