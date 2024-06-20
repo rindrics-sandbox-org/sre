@@ -3,15 +3,15 @@ name: Create Issues on Organization Repositories
 on:
   workflow_call:
     inputs:
-      - name: parent_issue_title
+      parent_issue_title:
         type: string
-      - name: parent_issue_body
+      parent_issue_body:
         type: string
-      - name: child_issue_title
+      child_issue_title:
         type: string
-      - name: child_issue_body
+      child_issue_body:
         type: string
-      - name: get_repos_inactive_for_months
+      get_repos_inactive_for_months:
         description: "指定された月数以上更新されていないリポジトリのみを対象とする（0 に設定するとすべてのリポジトリが対象となる）"
         required: false
         default: 0
