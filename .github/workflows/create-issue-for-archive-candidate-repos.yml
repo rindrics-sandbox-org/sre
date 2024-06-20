@@ -10,6 +10,13 @@ on:
         required: false
         default: 3
 
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+  pull-requests: read
+  issues: write
+
 env:
   my_team: sre  # team who has an ownership of parent issue
 
