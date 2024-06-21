@@ -1,0 +1,33 @@
+name: Test GraphQL
+
+on:
+  push:
+    paths: .github/workflows/graphql-test.yml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: octokit/graphql-action@v2.3.2
+        with:
+          query: |
+            query ($org: String!) {
+              organization(login: $org) {
+                repositories(first: 100, orderBy: {field: UPDATED_AT, direction: ASC}) {
+                  nodes {
+                    name
+                    updatedAt
+                  }
+                }
+              }
+            }
+          variables: |
+            {
+              "org": "rindrics-sandbox-org"
+            },
+            {
+              "org": "luciphr"
+            }
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
