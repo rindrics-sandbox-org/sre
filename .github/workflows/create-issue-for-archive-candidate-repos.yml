@@ -1,15 +1,40 @@
-name: Create Issue for Archive Candidate Repositories
+name: "[create issue] Archive Candidate Repositories"
 
 on:
   schedule:
-    - cron: '0 0 1 * *'
+    - cron: '0 0 1 6,12 *' # 6/1 と 12/1 の 9:00 JST
   workflow_dispatch:
     inputs:
       get_repos_inactive_for_months:
         description: "指定された月数以上更新されていないリポジトリのみを対象とする（0 に設定するとすべてのリポジトリが対象となる）"
         required: false
         type: string
-        default: "0"
+        default: "3"
+      dry_run:
+        description: "true の場合は対象リポジトリを表示して終了する"
+        required: false
+        type: bool
+        default: true
+      excluded_repos:
+        description: "最終更新日によらずアーカイビング対象から除外するリポジトリのリスト"
+        required: false
+        type: string
+        default: |
+          [
+          "github-actions"
+          "github-operation"
+          "terraform-state-files"
+          "docusaurus"
+          "docusaurus-dist"
+          "cdr-sandbox"
+          "cdr-hr"
+          "cdr-labor"
+          "cdr-legal"
+          "cdr-assets"
+          "cdr-manager"
+          "cdr"
+          "sre"
+          ]
 
 permissions:
   actions: read
@@ -37,7 +62,7 @@ jobs:
           echo "month_ago=$(date -d '-${{ inputs.get_repos_inactive_for_months }} month' --utc +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
           echo "current_year=$(date +'%Y')" >> $GITHUB_ENV
           echo "current_quarter=$((($(date +%m)-1)/3+1))Q" >> $GITHUB_ENV
-    
+
       - name: Construct issue title and body
         id: construct_issue_data
         run: |
@@ -55,5 +80,6 @@ jobs:
       child_issue_title: ${{ needs.construct_issue_title_and_body.outputs.child_issue_title }}
       child_issue_body: ${{ needs.construct_issue_title_and_body.outputs.child_issue_body }}
       get_repos_inactive_for_months: ${{ inputs.get_repos_inactive_for_months }}
+      dry_run: ${{ inputs.dry_run }}
     secrets:
       PRIVATE_KEY_ISSUE_CREATOR: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
