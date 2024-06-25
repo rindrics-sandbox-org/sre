@@ -13,7 +13,7 @@ on:
       dry_run:
         description: "true の場合は対象リポジトリを表示して終了する"
         required: false
-        type: bool
+        type: boolean
         default: true
       excluded_repos:
         description: "最終更新日によらずアーカイビング対象から除外するリポジトリのリスト"
