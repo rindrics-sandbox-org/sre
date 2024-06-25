@@ -167,7 +167,6 @@ jobs:
               print(f"No repositories found that were updated more than {os.getenv('get_repos_inactive_for_months')} months ago.")
               with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
                   fh.write(f"has_old_repos=false\n")
-              exit(0)
 
           old_repos_str = json.dumps(old_repos)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
