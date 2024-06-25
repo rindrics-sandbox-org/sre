@@ -11,7 +11,7 @@ on:
         type: string
         default: "3"
       dry_run:
-        description: "true の場合は対象リポジトリを表示して終了する"
+        description: "dry-run（対象リポジトリを表示して終了）"
         required: false
         type: boolean
         default: true
@@ -66,5 +66,6 @@ jobs:
       child_issue_body: ${{ needs.construct_issue_title_and_body.outputs.child_issue_body }}
       get_repos_inactive_for_months: ${{ inputs.get_repos_inactive_for_months }}
       dry_run: ${{ inputs.dry_run }}
+      excluded_repos: ${{ inputs.excluded_repos }}
     secrets:
       PRIVATE_KEY_ISSUE_CREATOR: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
