@@ -19,13 +19,13 @@ on:
       dry_run:
         description: "true の場合は対象リポジトリを表示して終了する"
         required: false
-        type: boolean
+        type: bool
         default: true
       excluded_repos:
         description: "条件によらず処理対象から除外するリポジトリのリスト"
         required: false
         type: string
-        default: '[]'
+        default: []
 
     secrets:
       PRIVATE_KEY_ISSUE_CREATOR:
@@ -154,9 +154,7 @@ jobs:
                 team_repo_permissions[repo_name].append(team_slug)
 
           # Filter old repositories and find admin teams
-          excluded_repos = set(json.loads(${{
-            inputs.excluded_repos
-          }}))
+          excluded_repos = set(json.loads(os.getenv('EXCLUDED_REPOS')))
           old_repos = [
             {
               'name': repo['name'],
@@ -176,6 +174,13 @@ jobs:
               fh.write(f"has_old_repos=true\n")
               fh.write(f"old_repos={old_repos_str}\n")
           EOF
+        env:
+          EXCLUDED_REPOS: ${{ inputs.excluded_repos }}
+
+      - name: Show target repos
+        if: inputs.dry_run == 'true'
+        run: |
+          echo "target repos: ${{ steps.get_archive_candidates.outputs.old_repos}}"
 
   create_issues:
     runs-on: ubuntu-latest
