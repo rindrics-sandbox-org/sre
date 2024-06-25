@@ -184,7 +184,7 @@ jobs:
   create_issues:
     runs-on: ubuntu-latest
     needs: get_archive_candidates
-    if: ${{ needs.get_archive_candidates.outputs.has_old_repos == 'true' }} && ${{ inputs.dry_run == 'false' }}
+    if: ${{ needs.get_archive_candidates.outputs.has_old_repos == 'true' && inputs.dry_run == 'false' }}
 
     env:
       old_repos: ${{ needs.get_archive_candidates.outputs.old_repos }}
