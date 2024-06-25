@@ -21,19 +21,7 @@ on:
         type: string
         default: |
           [
-          "github-actions"
-          "github-operation"
-          "terraform-state-files"
-          "docusaurus"
-          "docusaurus-dist"
-          "cdr-sandbox"
-          "cdr-hr"
-          "cdr-labor"
-          "cdr-legal"
-          "cdr-assets"
-          "cdr-manager"
-          "cdr"
-          "sre"
+          "second-repo"
           ]
 
 permissions:
