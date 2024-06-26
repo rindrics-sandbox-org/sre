@@ -186,7 +186,7 @@ jobs:
               teams = result["data"]["organization"]["teams"]["edges"]
               all_teams["organization"]["teams"]["edges"].extend(teams)
               print(f"all_teams: {all_teams}")
-              pageinfo = result["data"]["organization"]["teams"]["edges"]["node"]["repositories"]["pageInfo"]
+              pageinfo = result["data"]["organization"]["teams"]["edges"][-1]["node"]["repositories"]["pageInfo"] # get pageInfo of the last team of the current page
               print(f"page_info: {pageinfo}")
               has_next_page = pageinfo["hasNextPage"]
               variables["cursor"] = pageinfo["endCursor"]
