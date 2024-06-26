@@ -142,32 +142,46 @@ jobs:
           token = "${{ steps.generate_token.outputs.token }}"
           org = "${{ github.repository_owner }}"
 
-          query = """
-          query(\$org: String!, \$cursor: String) {
-            organization(login: \$org) {
-              teams(first: 100, after: \$cursor) {
+          team_query = """
+          query($org: String!, $cursor: String) {
+            organization(login: $org) {
+              teams(first: 100, after: $cursor) {
                 edges {
                   node {
                     slug
                     name
-                    repositories(first: 100) {
-                      edges {
-                        node {
-                          name
-                        }
-                        permission
-                      }
-                      pageInfo {
-                        endCursor
-                        hasNextPage
-                      }
+                  }
+                }
+                pageInfo {
+                  endCursor
+                  hasNextPage
+                }
+              }
+            }
+          }
+          """
+
+          repo_query = """
+          query($org: String!, $team_slug: String!, $cursor: String) {
+            organization(login: $org) {
+              team(slug: $team_slug) {
+                repositories(first: 100, after: $cursor) {
+                  edges {
+                    node {
+                      name
                     }
+                    permission
+                  }
+                  pageInfo {
+                    endCursor
+                    hasNextPage
                   }
                 }
               }
             }
           }
           """
+
           headers = {"Authorization": f"Bearer {token}"}
           variables = {"org": org, "cursor": None}
           has_next_team_page = True
@@ -180,20 +194,32 @@ jobs:
           }
 
           while has_next_team_page:
-              result = run_query(query, variables, headers)
+              result = run_query(team_query, variables, headers)
               print(f"result: {result}")
-              print(f"result['data']: {result["data"]}")
               teams = result["data"]["organization"]["teams"]["edges"]
+              for team in teams:
+                  team_slug = team["node"]["slug"]
+                  team["node"]["repositories"] = {"edges": []}
+                  repo_variables = {"org": org, "team_slug": team_slug, "cursor": None}
+                  has_next_repo_page = True
+
+                  while has_next_repo_page:
+                      repo_result = run_query(repo_query, repo_variables, headers)
+                      repos = repo_result["data"]["organization"]["team"]["repositories"]["edges"]
+                      team["node"]["repositories"]["edges"].extend(repos)
+                      repo_pageinfo = repo_result["data"]["organization"]["team"]["repositories"]["pageInfo"]
+                      has_next_repo_page = repo_pageinfo["hasNextPage"]
+                      repo_variables["cursor"] = repo_pageinfo["endCursor"]
+
               all_teams["organization"]["teams"]["edges"].extend(teams)
-              print(f"all_teams: {all_teams}")
-              pageinfo = result["data"]["organization"]["teams"]["edges"][-1]["node"]["repositories"]["pageInfo"] # get pageInfo of the last team of the current page
-              print(f"page_info: {pageinfo}")
-              has_next_team_page = pageinfo["hasNextPage"]
-              variables["cursor"] = pageinfo["endCursor"]
+              team_pageinfo = result["data"]["organization"]["teams"]["pageInfo"]
+              has_next_team_page = team_pageinfo["hasNextPage"]
+              variables["cursor"] = team_pageinfo["endCursor"]
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-              fh.write(f"data={all_teams}\n")
+              fh.write(f"data={json.dumps(all_teams)}\n")
           EOF
+
 
       - name: Construct list of target repos
         id: construct_target_repos
