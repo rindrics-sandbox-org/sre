@@ -109,11 +109,12 @@ jobs:
               result = run_query(query, variables, headers)
               repos = result["data"]["organization"]["repositories"]["nodes"]
               all_repos.extend(repos)
+              print(all_repos)
               has_next_page = result["data"]["organization"]["repositories"]["pageInfo"]["hasNextPage"]
               variables["cursor"] = result["data"]["organization"]["repositories"]["pageInfo"]["endCursor"]
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-              fh.write(f"data=all_repos\n")
+              fh.write(f"data={all_repos}\n")
           EOF
 
       - name: Query teams
