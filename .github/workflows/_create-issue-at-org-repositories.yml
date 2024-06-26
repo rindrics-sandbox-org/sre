@@ -25,7 +25,7 @@ on:
         description: "条件によらず処理対象から除外するリポジトリのリスト"
         required: false
         type: string
-        default: '[]'
+        default: "[]"
 
     secrets:
       PRIVATE_KEY_ISSUE_CREATOR:
@@ -48,7 +48,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Generate GitHub App Token
         id: generate_token
@@ -61,7 +61,7 @@ jobs:
       - name: Set date variable
         id: date
         run: |
-          echo "month_ago=$(date -d '-${{ env.get_repos_inactive_for_months }} month' --utc +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          echo "month_ago=$(date -d "-${{ env.get_repos_inactive_for_months }} month" --utc +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
           echo "current_year=$(date +'%Y')" >> $GITHUB_ENV
           echo "current_quarter=$((($(date +%m)-1)/3+1))Q" >> $GITHUB_ENV
 
@@ -76,7 +76,7 @@ jobs:
           import os
 
           def run_query(query, variables, headers):
-              response = requests.post('https://api.github.com/graphql', data=json.dumps({"query": query, "variables": variables}), headers=headers)
+              response = requests.post("https://api.github.com/graphql", data=json.dumps({"query": query, "variables": variables}), headers=headers)
               if response.status_code == 200:
                   return response.json()
               else:
@@ -85,7 +85,7 @@ jobs:
           token = "${{ steps.generate_token.outputs.token }}"
           org = "${{ github.repository_owner }}"
 
-          query = '''
+          query = """
           query(\$org: String!, \$cursor: String) {
             organization(login: \$org) {
               repositories(first: 100, after: \$cursor, orderBy: {field: UPDATED_AT, direction: ASC}) {
@@ -100,7 +100,7 @@ jobs:
               }
             }
           }
-          '''
+          """
           headers = {"Authorization": f"Bearer {token}"}
           variables = {"org": org, "cursor": None}
           has_next_page = True
@@ -114,7 +114,7 @@ jobs:
               has_next_page = result["data"]["organization"]["repositories"]["pageInfo"]["hasNextPage"]
               variables["cursor"] = result["data"]["organization"]["repositories"]["pageInfo"]["endCursor"]
 
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"data={all_repos}\n")
           EOF
 
@@ -168,39 +168,39 @@ jobs:
           teams_response = ${{
             steps.query_teams.outputs.data
           }}
-          teams_edges = teams_response['organization']['teams']['edges']
+          teams_edges = teams_response["organization"]["teams"]["edges"]
 
-          month_ago = datetime.strptime(os.getenv('month_ago'), '%Y-%m-%dT%H:%M:%SZ')
+          month_ago = datetime.strptime(os.getenv("month_ago"), "%Y-%m-%dT%H:%M:%SZ")
 
           # Build a map of teams and their repository permissions
           team_repo_permissions = {}
           for team in teams_edges:
-            team_slug = team['node']['slug']
-            for repo_edge in team['node']['repositories']['edges']:
-              repo_name = repo_edge['node']['name']
-              permission = repo_edge['permission']
-              if permission == 'ADMIN':
+            team_slug = team["node"]["slug"]
+            for repo_edge in team["node"]["repositories"]["edges"]:
+              repo_name = repo_edge["node"]["name"]
+              permission = repo_edge["permission"]
+              if permission == "ADMIN":
                 if repo_name not in team_repo_permissions:
                   team_repo_permissions[repo_name] = []
                 team_repo_permissions[repo_name].append(team_slug)
 
           # Filter old repositories and find admin teams
-          excluded_repos = set(json.loads(os.getenv('EXCLUDED_REPOS')))
+          excluded_repos = set(json.loads(os.getenv("EXCLUDED_REPOS")))
           old_repos = [
             {
-              'name': repo['name'],
-              'admin_teams': team_repo_permissions.get(repo['name'], [])
+              "name": repo["name"],
+              "admin_teams": team_repo_permissions.get(repo["name"], [])
             }
-            for repo in repos_nodes if datetime.strptime(repo['updatedAt'], '%Y-%m-%dT%H:%M:%SZ') < month_ago and repo['name'] not in excluded_repos
+            for repo in repos_nodes if datetime.strptime(repo["updatedAt"], "%Y-%m-%dT%H:%M:%SZ") < month_ago and repo["name"] not in excluded_repos
           ]
 
           if not old_repos:
-              print(f"No repositories found that were updated more than {os.getenv('get_repos_inactive_for_months')} months ago.")
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+              print(f"No repositories found that were updated more than {os.getenv("get_repos_inactive_for_months")} months ago.")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
                   fh.write(f"has_old_repos=false\n")
 
           old_repos_str = json.dumps(old_repos)
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"has_old_repos=true\n")
               fh.write(f"old_repos={old_repos_str}\n")
           EOF
@@ -229,7 +229,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Generate GitHub App Token
         id: generate_token
@@ -288,30 +288,30 @@ jobs:
           import os
           import json
 
-          old_repos_str = os.getenv('old_repos')
+          old_repos_str = os.getenv("old_repos")
           old_repos = json.loads(old_repos_str)
           print(old_repos_str)
           print(old_repos)
 
-          get_repos_inactive_for_months = os.getenv('get_repos_inactive_for_months')
-          my_org = os.getenv('my_org')
-          current_year = os.getenv('current_year')
-          current_quarter = os.getenv('current_quarter')
+          get_repos_inactive_for_months = os.getenv("get_repos_inactive_for_months")
+          my_org = os.getenv("my_org")
+          current_year = os.getenv("current_year")
+          current_quarter = os.getenv("current_quarter")
           year_quarter = f"[{current_year} {current_quarter} repo 棚卸し]"
-          parent_issue_url = os.getenv('parent_issue_url')
+          parent_issue_url = os.getenv("parent_issue_url")
 
           child_issue_data_list = []
 
           for repo in old_repos:
-              repo_name = repo['name']
-              admin_teams = [f"{my_org}/{t}" for t in repo['admin_teams']]
+              repo_name = repo["name"]
+              admin_teams = [f"{my_org}/{t}" for t in repo["admin_teams"]]
               admin_team_mentions = " ".join([f"@{t}" for t in admin_teams])
-              issue_data = {'repo': f"{my_org}/{repo_name}", 'admin_team_mentions': f"{admin_team_mentions}", 'issue_title': os.getenv('child_issue_title'), 'issue_body': os.getenv('child_issue_body')}
+              issue_data = {"repo": f"{my_org}/{repo_name}", "admin_team_mentions": f"{admin_team_mentions}", "issue_title": os.getenv("child_issue_title"), "issue_body": os.getenv("child_issue_body")}
               child_issue_data_list.append(issue_data)
 
           child_issue_data_str = json.dumps(child_issue_data_list)
           print(child_issue_data_str)
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"child_issue_data={child_issue_data_str}\n")
           EOF
         env:
@@ -336,7 +336,7 @@ jobs:
               admin_team_mentions=$(echo $issue_data | jq -r .[$i].admin_team_mentions)
               full_issue_body=$(echo -e "$issue_body\n$admin_team_mentions")
 
-              issue_url=$(curl -L -X POST -H "Accept: application/vnd.github+json"  -H "Authorization: Bearer $GITHUB_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/$owner_repo/issues -d "$(jq -nc --arg title "$issue_title" --arg body "$(echo "$full_issue_body" | sed 's/\\n/\n/g')" '{"title": $title, "body": $body}')" | jq -r '.html_url')
+              issue_url=$(curl -L -X POST -H "Accept: application/vnd.github+json"  -H "Authorization: Bearer $GITHUB_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/$owner_repo/issues -d "$(jq -nc --arg title "$issue_title" --arg body "$(echo "$full_issue_body" | sed 's/\\n/\n/g')" '{"title": $title, "body": $body}')" | jq -r ".html_url")
 
               if [ $? -ne 0 ]; then
                   echo "Failed to create issue for $owner_repo. Error: $issue_url"
