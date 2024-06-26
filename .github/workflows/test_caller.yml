@@ -12,7 +12,11 @@ on:
         description: "最終更新日によらずアーカイビング対象から除外するリポジトリのリスト"
         required: false
         type: string
-        default: '["second-repo"]'
+        default: |
+          '[
+          "first-repo"
+          "second-repo"
+          ]'
 
 permissions:
   actions: read
