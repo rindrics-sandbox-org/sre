@@ -20,10 +20,10 @@ on:
         required: false
         type: string
         default: |
-          '[
+          [
           "first-repo",
           "second-repo"
-          ]'
+          ]
 
 permissions:
   actions: read
