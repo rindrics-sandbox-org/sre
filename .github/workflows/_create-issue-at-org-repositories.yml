@@ -28,8 +28,8 @@ on:
         default: '[]'
 
     secrets:
-      PAT_CREATE_ISSUE:
-        description: "PAT with permissions to complete this workflow"
+      PRIVATE_KEY_ISSUE_CREATOR:
+        description: "a private key of GitHub App with permissions to complete this workflow"
         required: true
 
 jobs:
@@ -49,6 +49,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID_ISSUE_CREATOR }}
+          private-key: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
 
       - name: Set date variable
         id: date
@@ -74,7 +81,7 @@ jobs:
               else:
                   raise Exception(f"Query failed to run by returning code of {response.status_code}. {query}")
 
-          token = "${{ secrets.PAT_CREATE_ISSUE }}"
+          token = "${{ steps.generate_token.outputs.token }}"
           org = "${{ github.repository_owner }}"
 
           query = '''
@@ -140,7 +147,7 @@ jobs:
               "org": ${{ github.repository_owner }}
             }
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_CREATE_ISSUE }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
 
       - name: Get archive candidate repos
         id: get_archive_candidates
@@ -223,6 +230,13 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID_ISSUE_CREATOR }}
+          private-key: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
+
       - name: Get repository ID
         id: get_repo_id
         uses: octokit/graphql-action@v2.3.2
@@ -239,7 +253,7 @@ jobs:
               "name": ${{ github.event.repository.name }}
             }
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_CREATE_ISSUE }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
 
 
       - name: Create parent issue
@@ -262,7 +276,7 @@ jobs:
               "body": "${{ inputs.parent_issue_body }}"
             }
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_CREATE_ISSUE }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
 
       - name: Create child issue data
         id: create_child_issue_data
@@ -328,7 +342,7 @@ jobs:
 
           echo EOF >> $GITHUB_ENV
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_CREATE_ISSUE }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           parent_issue_url: "${{ fromJSON(steps.create_parent_issue.outputs.data).createIssue.issue.url }}"
 
       - name: Update parent issue description
@@ -348,4 +362,4 @@ jobs:
               "body": "${{ inputs.parent_issue_body}}\n${{ env.child_issue_urls }}"
             }
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_CREATE_ISSUE }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}

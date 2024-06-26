@@ -72,4 +72,4 @@ jobs:
       dry_run: ${{ inputs.dry_run }}
       excluded_repos: ${{ inputs.excluded_repos }}
     secrets:
-      PAT_CREATE_ISSUE: ${{ secrets.PAT_CREATE_ISSUE }}
+      PRIVATE_KEY_ISSUE_CREATOR: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
