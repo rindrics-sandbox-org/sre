@@ -171,14 +171,20 @@ jobs:
           headers = {"Authorization": f"Bearer {token}"}
           variables = {"org": org, "cursor": None}
           has_next_page = True
-          all_teams = []
+          all_teams = {
+              "organization": {
+                  "teams": {
+                      "edges": []
+                  }
+              }
+          }
 
           while has_next_page:
               result = run_query(query, variables, headers)
               print(f"result: {result}")
               print(f"result['data']: {result["data"]}")
-              teams = result["data"]
-              all_teams.extend(teams)
+              teams = result["data"]["organization"]["teams"]["edges"]
+              all_teams["organization"]["teams"]["edges"].extend(teams)
               print(f"all_teams: {all_teams}")
               pageinfo = result["data"]["organization"]["teams"]["edges"]["node"]["repositories"]["pageInfo"]["hasNextPage"]
               print(f"page_info: {page_info}")
