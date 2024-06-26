@@ -143,9 +143,9 @@ jobs:
           org = "${{ github.repository_owner }}"
 
           team_query = """
-          query($org: String!, $cursor: String) {
-            organization(login: $org) {
-              teams(first: 100, after: $cursor) {
+          query(\$org: String!, \$cursor: String) {
+            organization(login: \$org) {
+              teams(first: 100, after: \$cursor) {
                 edges {
                   node {
                     slug
@@ -162,10 +162,10 @@ jobs:
           """
 
           repo_query = """
-          query($org: String!, $team_slug: String!, $cursor: String) {
-            organization(login: $org) {
-              team(slug: $team_slug) {
-                repositories(first: 100, after: $cursor) {
+          query(\$org: String!, \$team_slug: String!, \$cursor: String) {
+            organization(login: \$org) {
+              team(slug: \$team_slug) {
+                repositories(first: 100, after: \$cursor) {
                   edges {
                     node {
                       name
