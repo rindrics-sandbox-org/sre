@@ -179,7 +179,7 @@ jobs:
               teams = result["data"]
               all_teams.extend(teams)
               print(all_teams)
-              pageinfo = result["data"]["organizations"]["teams"]["edges"]["node"]["repositories"]["pageInfo"]["hasNextPage"]
+              pageinfo = result["data"]["organization"]["teams"]["edges"]["node"]["repositories"]["pageInfo"]["hasNextPage"]
               has_next_page = pageinfo["hasNextPage"]
               variables["cursor"] = pageinfo["endCursor"]
 
