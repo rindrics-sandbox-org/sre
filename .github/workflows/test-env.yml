@@ -1,0 +1,21 @@
+name: Test environment
+
+on:
+  push:
+    paths:
+      .github/workflows/test-env.yml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID_ISSUE_CREATOR }}
+          private-key: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
+
+      - run: echo $(gh repo list rindrics-sandbox-org)
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
