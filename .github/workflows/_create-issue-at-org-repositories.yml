@@ -157,11 +157,11 @@ jobs:
                         }
                         permission
                       }
+                      pageInfo {
+                        endCursor
+                        hasNextPage
+                      }
                     }
-                  }
-                  pageInfo {
-                    endCursor
-                    hasNextPage
                   }
                 }
               }
