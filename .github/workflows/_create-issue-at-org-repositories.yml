@@ -176,7 +176,7 @@ jobs:
           while has_next_page:
               result = run_query(query, variables, headers)
               print(result)
-              teams = result["data"]["organization"]["teams"]["edges"]["node"]
+              teams = result["data"]
               all_teams.extend(teams)
               print(all_teams)
               pageinfo = result["data"]["organizations"]["teams"]["edges"]["node"]["repositories"]["pageInfo"]["hasNextPage"]
