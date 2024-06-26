@@ -341,7 +341,7 @@ jobs:
               echo "- [ ] $issue_url\n" >> $GITHUB_ENV
           done
 
-          echo EOF >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           parent_issue_url: "${{ fromJSON(steps.create_parent_issue.outputs.data).createIssue.issue.url }}"
