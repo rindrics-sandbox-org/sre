@@ -159,10 +159,9 @@ jobs:
           import json
 
           # Repositories response from query_repo step
-          repos_response = ${{
+          repos_nodes = ${{
             steps.query_repo.outputs.data
           }}
-          repos_nodes = repos_response['organization']['repositories']['nodes']
 
           # Teams response from query_teams step
           teams_response = ${{
