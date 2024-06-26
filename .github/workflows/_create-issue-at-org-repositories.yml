@@ -326,15 +326,19 @@ jobs:
           echo "Creating child issues..."
           echo "child_issue_urls<<EOF" >> $GITHUB_ENV
 
-          issue_data='${{ steps.create_child_issue_data.outputs.child_issue_data }}'
+          issue_data="${{ steps.create_child_issue_data.outputs.child_issue_data }}"
+          echo "issue_data ok"
           length=$(echo $issue_data | jq length)
+          echo "length ok"
 
           for i in $(seq 0 $(($length - 1))); do
               owner_repo=$(echo $issue_data | jq -r .[$i].repo)
               issue_title=$(echo $issue_data | jq -r .[$i].issue_title)
               issue_body=$(echo $issue_data | jq -r .[$i].issue_body)
+              echo "issue_body ok"
               admin_team_mentions=$(echo $issue_data | jq -r .[$i].admin_team_mentions)
               full_issue_body=$(echo -e "$issue_body\n$admin_team_mentions")
+              echo "full_issue_body ok"
 
               issue_url=$(curl -L -X POST -H "Accept: application/vnd.github+json"  -H "Authorization: Bearer $GITHUB_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/$owner_repo/issues -d "$(jq -nc --arg title "$issue_title" --arg body "$(echo "$full_issue_body" | sed 's/\\n/\n/g')" '{"title": $title, "body": $body}')" | jq -r ".html_url")
 
