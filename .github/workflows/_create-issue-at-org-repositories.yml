@@ -326,7 +326,7 @@ jobs:
           echo "Creating child issues..."
           echo "child_issue_urls<<EOF" >> $GITHUB_ENV
 
-          issue_data="${{ steps.create_child_issue_data.outputs.child_issue_data }}"
+          issue_data='${{ steps.create_child_issue_data.outputs.child_issue_data }}'
           echo "issue_data ok"
           length=$(echo $issue_data | jq length)
           echo "length ok"
