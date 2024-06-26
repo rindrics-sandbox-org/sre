@@ -33,11 +33,11 @@ on:
         required: true
 
 jobs:
-  get_archive_candidates:
+  construct_target_repos:
     runs-on: ubuntu-latest
     outputs:
-      has_old_repos: ${{ steps.get_archive_candidates.outputs.has_old_repos }}
-      old_repos: ${{ steps.get_archive_candidates.outputs.old_repos }}
+      has_old_repos: ${{ steps.construct_target_repos.outputs.has_old_repos }}
+      old_repos: ${{ steps.construct_target_repos.outputs.old_repos }}
       current_year: ${{ env.current_year }}
       current_quarter: ${{ env.current_quarter }}
 
@@ -50,7 +50,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Generate GitHub App Token
+      - name: Generate installation token of GitHub App
         id: generate_token
         uses: actions/create-github-app-token@v1
         with:
@@ -118,7 +118,7 @@ jobs:
               fh.write(f"data={all_repos}\n")
           EOF
 
-      - name: Query teams
+      - name: Query teams under organization
         id: query_teams
         uses: octokit/graphql-action@v2.3.2
         with:
@@ -150,8 +150,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
 
-      - name: Get archive candidate repos
-        id: get_archive_candidates
+      - name: Construct list of target repos
+        id: construct_target_repos
         run: |
           echo "Extracting old repositories..."
           python3 - <<EOF
@@ -207,20 +207,20 @@ jobs:
         env:
           EXCLUDED_REPOS: ${{ inputs.excluded_repos }}
 
-      - name: Show target repos
+      - name: Show target repos on dry run
         if: ${{ inputs.dry_run == 'true' }}
         run: |
-          echo "target repos: ${{ steps.get_archive_candidates.outputs.old_repos}}"
+          echo "target repos: ${{ steps.construct_target_repos.outputs.old_repos}}"
 
   create_issues:
     runs-on: ubuntu-latest
-    needs: get_archive_candidates
-    if: ${{ (needs.get_archive_candidates.outputs.has_old_repos == 'true') && (inputs.dry_run == 'false') }}
+    needs: construct_target_repos
+    if: ${{ (needs.construct_target_repos.outputs.has_old_repos == 'true') && (inputs.dry_run == 'false') }}
 
     env:
-      old_repos: ${{ needs.get_archive_candidates.outputs.old_repos }}
-      current_year: ${{ needs.get_archive_candidates.outputs.current_year }}
-      current_quarter: ${{ needs.get_archive_candidates.outputs.current_quarter }}
+      old_repos: ${{ needs.construct_target_repos.outputs.old_repos }}
+      current_year: ${{ needs.construct_target_repos.outputs.current_year }}
+      current_quarter: ${{ needs.construct_target_repos.outputs.current_quarter }}
 
     steps:
       - name: Checkout repository
@@ -231,7 +231,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Generate GitHub App Token
+      - name: Generate installation token of GitHub App
         id: generate_token
         uses: actions/create-github-app-token@v1
         with:
@@ -239,7 +239,7 @@ jobs:
           private-key: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
           owner: ${{ github.repository_owner }}
 
-      - name: Get repository ID
+      - name: Get ID of target repos
         id: get_repo_id
         uses: octokit/graphql-action@v2.3.2
         with:
@@ -280,7 +280,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
 
-      - name: Create child issue data
+      - name: Construct child issue data
         id: create_child_issue_data
         run: |
           echo "Creating child issue data..."
