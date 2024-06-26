@@ -15,15 +15,6 @@ on:
         required: false
         type: boolean
         default: true
-      excluded_repos:
-        description: "最終更新日によらずアーカイビング対象から除外するリポジトリのリスト"
-        required: false
-        type: string
-        default: |
-          [
-          "first-repo",
-          "second-repo"
-          ]
 
 permissions:
   actions: read
@@ -33,6 +24,7 @@ permissions:
 
 env:
   my_team: sre  # team who has an ownership of parent issue
+  excluded_repos_file: .github/workflows/excluded_repos.txt
 
 jobs:
   construct_issue_title_and_body:
@@ -43,6 +35,7 @@ jobs:
       child_issue_title: ${{ steps.construct_issue_data.outputs.child_issue_title }}
       child_issue_body: ${{ steps.construct_issue_data.outputs.child_issue_body }}
       access_token: ${{ steps.generate_token.outputs.token }}
+      excluded_repos: ${{ steps.read_excluded_repos.outputs.excluded_repos }}
 
     steps:
       - name: Set date variable
@@ -58,7 +51,18 @@ jobs:
           echo "parent_issue_title=[${{ env.current_year }} ${{ env.current_quarter }}] リポジトリ棚卸し" >> "$GITHUB_OUTPUT"
           echo "parent_issue_body=下記は直近 ${{ inputs.get_repos_inactive_for_months }} か月間で更新のないリポジトリのリストです。アーカイブを検討してください。" >> "$GITHUB_OUTPUT"
           echo "child_issue_title=[${{ env.current_year }} ${{ env.current_quarter }} 棚卸し] 本リポジトリのアーカイブを検討する" >> "$GITHUB_OUTPUT"
-          echo "child_issue_body=本リポジトリは直近 ${{ inputs.get_repos_inactive_for_months }} か月間で更新がないようです。利用状況を確認し、アーカイブ可能な場合には @${{ github.repository_owner }}/${{ env.my_team }} にご連絡ください。" >> "$GITHUB_OUTPUT"
+          echo "child_issue_body=本リポジトリは直近 ${{ inputs.get_repos_inactive_for_months }} か月間で更新がないようです。利用状況を確認し、アーカイブ可能な場合には \`https://github.com/${{ github.repository_owner }}/github-operation/\` から \`本リポジトリ名.tf\` を削除する PR を作成してアーカイブを依頼してください。" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+
+      - name: Read excluded repos from file
+        id: read_excluded_repos
+        run: |
+          EXCLUDED_REPOS=$(grep -v '^#' ${{ env.excluded_repos_file }} | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "excluded_repos=${EXCLUDED_REPOS}" >> $GITHUB_OUTPUT
 
   create_issues_for_organization_repository:
     needs: construct_issue_title_and_body
@@ -70,6 +74,6 @@ jobs:
       child_issue_body: ${{ needs.construct_issue_title_and_body.outputs.child_issue_body }}
       get_repos_inactive_for_months: ${{ inputs.get_repos_inactive_for_months }}
       dry_run: ${{ inputs.dry_run }}
-      excluded_repos: ${{ inputs.excluded_repos }}
+      excluded_repos: ${{ needs.construct_issue_title_and_body.outputs.excluded_repos }}
     secrets:
       PRIVATE_KEY_ISSUE_CREATOR: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
