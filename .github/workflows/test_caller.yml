@@ -1,0 +1,31 @@
+name: "[test] Caller "
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "dry-run（対象リポジトリを表示して終了）"
+        required: false
+        type: boolean
+        default: true
+      excluded_repos:
+        description: "最終更新日によらずアーカイビング対象から除外するリポジトリのリスト"
+        required: false
+        type: string
+        default: '["second-repo"]'
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+  issues: write
+
+env:
+  my_team: sre  # team who has an ownership of parent issue
+
+jobs:
+  create_issues_for_organization_repository:
+    uses: ./.github/workflows/_test_workflow.yml
+    with:
+      dry_run: ${{ inputs.dry_run }}
+      excluded_repos: ${{ inputs.excluded_repos }}
