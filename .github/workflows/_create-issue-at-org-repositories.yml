@@ -289,6 +289,8 @@ jobs:
 
           old_repos_str = os.getenv('old_repos')
           old_repos = json.loads(old_repos_str)
+          print(old_repos_str)
+          print(old_repos)
 
           get_repos_inactive_for_months = os.getenv('get_repos_inactive_for_months')
           my_org = os.getenv('my_org')
@@ -307,6 +309,7 @@ jobs:
               child_issue_data_list.append(issue_data)
 
           child_issue_data_str = json.dumps(child_issue_data_list)
+          print(child_issue_data_str)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
               fh.write(f"child_issue_data={child_issue_data_str}\n")
           EOF
@@ -341,7 +344,7 @@ jobs:
               echo "- [ ] $issue_url\n" >> $GITHUB_ENV
           done
 
-          echo "EOF" >> $GITHUB_ENV
+          echo EOF >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           parent_issue_url: "${{ fromJSON(steps.create_parent_issue.outputs.data).createIssue.issue.url }}"
