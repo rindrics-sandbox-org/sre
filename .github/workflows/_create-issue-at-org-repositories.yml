@@ -87,7 +87,7 @@ jobs:
           query = '''
           query(\$org: String!, \$cursor: String) {
             organization(login: \$org) {
-              repositories(first: 100, after: \$cursor, orderBy: {field: UPDATED_AT, direction: ASC}) {
+              repositories(first: 100, after: \$cursor, orderBy: {field: UPDATED_AT, direction: ASC}, privacy: PRIVATE) {
                 nodes {
                   name
                   updatedAt
