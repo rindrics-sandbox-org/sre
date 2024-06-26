@@ -66,25 +66,55 @@ jobs:
 
       - name: Query all repositories under organization
         id: query_repo
-        uses: octokit/graphql-action@v2.3.2
-        with:
-          query: |
-            query ($org: String!) {
-              organization(login: $org) {
-                repositories(first: 100, orderBy: {field: UPDATED_AT, direction: ASC}) {
-                  nodes {
-                    name
-                    updatedAt
-                  }
+        run: |
+          pip install requests
+          python3 - <<EOF
+          import sys
+          import requests
+          import json
+          import os
+
+          def run_query(query, variables, headers):
+              response = requests.post('https://api.github.com/graphql', data=json.dumps({"query": query, "variables": variables}), headers=headers)
+              if response.status_code == 200:
+                  return response.json()
+              else:
+                  raise Exception(f"Query failed to run by returning code of {response.status_code}. {query}")
+
+          token = "${{ steps.generate_token.outputs.token }}"
+          org = "${{ github.repository_owner }}"
+
+          query = '''
+          query(\$org: String!, \$cursor: String) {
+            organization(login: \$org) {
+              repositories(first: 100, after: \$cursor, orderBy: {field: UPDATED_AT, direction: ASC}) {
+                nodes {
+                  name
+                  updatedAt
+                }
+                pageInfo {
+                  endCursor
+                  hasNextPage
                 }
               }
             }
-          variables: |
-            {
-              "org": "${{ github.repository_owner }}"
-            }
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          }
+          '''
+          headers = {"Authorization": f"Bearer {token}"}
+          variables = {"org": org, "cursor": None}
+          has_next_page = True
+          all_repos = []
+
+          while has_next_page:
+              result = run_query(query, variables, headers)
+              repos = result["data"]["organization"]["repositories"]["nodes"]
+              all_repos.extend(repos)
+              has_next_page = result["data"]["organization"]["repositories"]["pageInfo"]["hasNextPage"]
+              variables["cursor"] = result["data"]["organization"]["repositories"]["pageInfo"]["endCursor"]
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+              fh.write(f"data=all_repos\n")
+          EOF
 
       - name: Query teams
         id: query_teams
