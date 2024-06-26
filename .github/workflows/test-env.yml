@@ -15,6 +15,7 @@ jobs:
         with:
           app-id: ${{ vars.APP_ID_ISSUE_CREATOR }}
           private-key: ${{ secrets.PRIVATE_KEY_ISSUE_CREATOR }}
+          owner: ${{ github.repository_owner }}
 
       - run: echo $(gh repo list rindrics-sandbox-org)
         env:
