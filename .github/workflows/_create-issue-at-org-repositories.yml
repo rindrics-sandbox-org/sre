@@ -176,11 +176,12 @@ jobs:
           while has_next_page:
               result = run_query(query, variables, headers)
               print(result)
-              teams = result["data"]["organization"]["teams"]["edges"]
+              teams = result["data"]["organization"]["teams"]["edges"]["node"]
               all_teams.extend(teams)
               print(all_teams)
-              has_next_page = result["data"]["organization"]["teams"]["pageInfo"]["hasNextPage"]
-              variables["cursor"] = result["data"]["organization"]["teams"]["pageInfo"]["endCursor"]
+              pageinfo = result["data"]["organizations"]["teams"]["edges"]["node"]["repositories"]["pageInfo"]["hasNextPage"]
+              has_next_page = pageinfo["hasNextPage"]
+              variables["cursor"] = pageinfo["endCursor"]
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"data={all_teams}\n")
