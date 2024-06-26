@@ -170,7 +170,7 @@ jobs:
           """
           headers = {"Authorization": f"Bearer {token}"}
           variables = {"org": org, "cursor": None}
-          has_next_page = True
+          has_next_team_page = True
           all_teams = {
               "organization": {
                   "teams": {
@@ -179,7 +179,7 @@ jobs:
               }
           }
 
-          while has_next_page:
+          while has_next_team_page:
               result = run_query(query, variables, headers)
               print(f"result: {result}")
               print(f"result['data']: {result["data"]}")
@@ -188,7 +188,7 @@ jobs:
               print(f"all_teams: {all_teams}")
               pageinfo = result["data"]["organization"]["teams"]["edges"][-1]["node"]["repositories"]["pageInfo"] # get pageInfo of the last team of the current page
               print(f"page_info: {pageinfo}")
-              has_next_page = pageinfo["hasNextPage"]
+              has_next_team_page = pageinfo["hasNextPage"]
               variables["cursor"] = pageinfo["endCursor"]
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
