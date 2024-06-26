@@ -175,11 +175,12 @@ jobs:
 
           while has_next_page:
               result = run_query(query, variables, headers)
-              print(result)
+              print(f"result: {result}")
               teams = result["data"]
               all_teams.extend(teams)
-              print(all_teams)
+              print(f"all_teams: {all_teams}")
               pageinfo = result["data"]["organization"]["teams"]["edges"]["node"]["repositories"]["pageInfo"]["hasNextPage"]
+              print(f"page_info: {page_info}")
               has_next_page = pageinfo["hasNextPage"]
               variables["cursor"] = pageinfo["endCursor"]
 
