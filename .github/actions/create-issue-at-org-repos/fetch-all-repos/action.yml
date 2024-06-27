@@ -1,0 +1,21 @@
+name: Fetch All Repos Under Organization
+description: Fetches all repositories under given organization
+
+inputs:
+  organization:
+    type: string
+    description: Name of GitHub organization to fetch repositories
+    required: true
+  token:
+    type: string
+    description: GitHub Token with `read` permission of `repo:metadata`
+    required: true
+
+outputs:
+  repositories:
+    type: string
+    description: List of repository names in format `["repoA", "repoB"]`
+
+runs:
+  using: 'node20'
+  main: 'index.js'
